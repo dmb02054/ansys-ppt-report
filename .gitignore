@@ -1,0 +1,12 @@
+# Python
+__pycache__/
+*.pyc
+
+# VS Code
+.vscode/
+
+# Output
+output/
+
+# Windows
+Thumbs.db
