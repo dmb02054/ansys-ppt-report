@@ -1,96 +1,96 @@
 import cv2
 import os
 
-from legend_detector import (
+from detectors.legend_detector import (
     LegendDetector
+)
+
+from detectors.model_detector import (
+    ModelDetector
 )
 
 
 class ImageProcessor:
 
-    def __init__(self):
+    def __init__(
+        self,
+        temp_dir
+    ):
+
+        self.temp_dir = temp_dir
 
         self.legend_detector = (
             LegendDetector()
         )
 
-    def process(self, file_path):
+        self.model_detector = (
+            ModelDetector()
+        )
 
-        img = cv2.imread(file_path)
+    def process(
+        self,
+        file_path
+    ):
+
+        img = cv2.imread(
+            file_path
+        )
 
         if img is None:
+
+            print(
+                f"이미지 로드 실패 : {file_path}"
+            )
+
             return None
 
         base_name = os.path.splitext(
-            os.path.basename(file_path)
+            os.path.basename(
+                file_path
+            )
         )[0]
+
+        # =================================
+        # 범례 추출
+        # =================================
 
         legend_file = (
             self.legend_detector.detect(
                 img,
-                base_name
+                base_name,
+                self.temp_dir
             )
         )
 
+        # =================================
+        # 모델 추출
+        # =================================
+
         model_file = (
-            self.extract_model(
+            self.model_detector.detect(
                 img,
-                base_name
+                base_name,
+                self.temp_dir
             )
         )
+
+        if model_file is None:
+
+            print(
+                f"모델 검출 실패 : "
+                f"{base_name}"
+            )
+
+            return None
+
+        # =================================
+        # 결과 반환
+        # =================================
 
         return {
             "title": base_name,
+
             "model_file": model_file,
+
             "legend_file": legend_file
         }
-
-    def extract_model(
-        self,
-        img,
-        base_name
-    ):
-
-        gray = cv2.cvtColor(
-            img,
-            cv2.COLOR_BGR2GRAY
-        )
-
-        _, mask = cv2.threshold(
-            gray,
-            250,
-            255,
-            cv2.THRESH_BINARY_INV
-        )
-
-        contours, _ = cv2.findContours(
-            mask,
-            cv2.RETR_EXTERNAL,
-            cv2.CHAIN_APPROX_SIMPLE
-        )
-
-        contours = sorted(
-            contours,
-            key=cv2.contourArea,
-            reverse=True
-        )
-
-        x, y, w, h = cv2.boundingRect(
-            contours[0]
-        )
-
-        model = img[
-            y:y+h,
-            x:x+w
-        ]
-
-        model_file = (
-            f"{base_name}_model.png"
-        )
-
-        cv2.imwrite(
-            model_file,
-            model
-        )
-
-        return model_file

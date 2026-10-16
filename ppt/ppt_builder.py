@@ -1,5 +1,6 @@
+from copy import deepcopy
+
 from pptx import Presentation
-from pptx.util import Pt
 
 import config
 
@@ -8,68 +9,247 @@ class PPTBuilder:
 
     def __init__(self):
 
-        self.prs = Presentation()
-
-        self.prs.slide_width = (
-            config.SLIDE_WIDTH
+        self.prs = Presentation(
+            str(
+                config.TEMPLATE_FILE
+            )
         )
 
-        self.prs.slide_height = (
-            config.SLIDE_HEIGHT
+        self.result_template_index = (
+            self.find_result_template()
         )
 
-        self.layout = (
-            self.prs.slide_layouts[6]
+    # =====================================
+    # 결과 템플릿 찾기
+    # =====================================
+
+    def find_result_template(self):
+
+        for idx, slide in enumerate(
+            self.prs.slides
+        ):
+
+            for shape in slide.shapes:
+
+                if not hasattr(
+                    shape,
+                    "text"
+                ):
+                    continue
+
+                if (
+                    config.RESULT_TEMPLATE_TAG
+                    in shape.text
+                ):
+
+                    return idx
+
+        raise ValueError(
+            f"{config.RESULT_TEMPLATE_TAG}"
+            f" 슬라이드를 찾을 수 없습니다."
         )
 
-    def add_slide(
+    # =====================================
+    # 슬라이드 복제
+    # =====================================
+
+    def duplicate_slide(
         self,
-        result
+        slide_index
     ):
 
-        slide = (
+        source = (
+            self.prs.slides[
+                slide_index
+            ]
+        )
+
+        new_slide = (
             self.prs.slides.add_slide(
-                self.layout
+                source.slide_layout
             )
         )
 
-        title_box = (
-            slide.shapes.add_textbox(
-                config.TITLE_X,
-                config.TITLE_Y,
-                config.TITLE_W,
-                config.TITLE_H
+        for shape in source.shapes:
+
+            new_slide.shapes._spTree.insert_element_before(
+                deepcopy(
+                    shape.element
+                ),
+                "p:extLst"
             )
-        )
 
-        title_box.text_frame.text = (
-            result["title"]
-        )
+        return new_slide
 
-        title_box.text_frame.paragraphs[
-            0
-        ].font.size = Pt(
-            config.TITLE_FONT_SIZE
-        )
+    # =====================================
+    # 이미지 자리표시자 교체
+    # =====================================
 
-        slide.shapes.add_picture(
-            result["model_file"],
-            config.MODEL_X,
-            config.MODEL_Y,
-            width=config.MODEL_WIDTH
-        )
+    def replace_placeholder_image(
+        self,
+        slide,
+        placeholder,
+        image_file
+    ):
 
-        if result["legend_file"]:
+        if not image_file:
+            return
 
+        for shape in slide.shapes:
+
+            if not hasattr(
+                shape,
+                "text"
+            ):
+                continue
+
+            if (
+                shape.text.strip()
+                != placeholder
+            ):
+                continue
+
+            left = shape.left
+            top = shape.top
+
+            height = shape.height
+
+            slide.shapes._spTree.remove(
+                shape.element
+            )
+
+            # 높이만 지정
             slide.shapes.add_picture(
-                result["legend_file"],
-                config.LEGEND_X,
-                config.LEGEND_Y,
-                width=config.LEGEND_WIDTH
+                image_file,
+                left,
+                top,
+                height=height
             )
+
+            break
+
+    # =====================================
+    # 결과 슬라이드 생성
+    # =====================================
+
+    def add_case_slide(
+        self,
+        case_name,
+        rack,
+        glass
+    ):
+
+        slide = self.duplicate_slide(
+            self.result_template_index
+        )
+
+        for shape in slide.shapes:
+
+            if not hasattr(
+                shape,
+                "text"
+            ):
+                continue
+
+            text = (
+                shape.text.strip()
+            )
+
+            # -------------------
+            # Case 제목
+            # -------------------
+
+            if (
+                text
+                == config.TITLE_TAG
+            ):
+
+                shape.text = (
+                    case_name
+                )
+
+            # -------------------
+            # 결과 템플릿 태그 삭제
+            # -------------------
+
+            elif (
+                text
+                == config.RESULT_TEMPLATE_TAG
+            ):
+
+                shape.text = ""
+
+        # -----------------------
+        # Rack
+        # -----------------------
+
+        if rack:
+
+            self.replace_placeholder_image(
+                slide,
+                "[RACK_MODEL]",
+                rack["model_file"]
+            )
+
+            self.replace_placeholder_image(
+                slide,
+                "[RACK_LEGEND]",
+                rack["legend_file"]
+            )
+
+        # -----------------------
+        # Glass
+        # -----------------------
+
+        if glass:
+
+            self.replace_placeholder_image(
+                slide,
+                "[GLASS_MODEL]",
+                glass["model_file"]
+            )
+
+            self.replace_placeholder_image(
+                slide,
+                "[GLASS_LEGEND]",
+                glass["legend_file"]
+            )
+
+    # =====================================
+    # 슬라이드 삭제
+    # =====================================
+
+    def remove_slide(
+        self,
+        slide_index
+    ):
+
+        slide_id = (
+            self.prs.slides._sldIdLst[
+                slide_index
+            ]
+        )
+
+        self.prs.part.drop_rel(
+            slide_id.rId
+        )
+
+        del self.prs.slides._sldIdLst[
+            slide_index
+        ]
+
+    # =====================================
+    # 저장
+    # =====================================
 
     def save(self):
 
+        self.remove_slide(
+            self.result_template_index
+        )
+
         self.prs.save(
-            config.OUTPUT_PPT
+            str(
+                config.OUTPUT_PPT
+            )
         )

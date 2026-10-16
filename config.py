@@ -1,31 +1,108 @@
+from pathlib import Path
 from pptx.util import Inches
 
-# PPT
+# =====================================
+# 기본 경로
+# =====================================
 
-SLIDE_WIDTH = Inches(13.33)
-SLIDE_HEIGHT = Inches(7.5)
+BASE_DIR = Path(__file__).parent
 
-# Title
+# =====================================
+# 템플릿
+# =====================================
 
-TITLE_X = Inches(0.3)
-TITLE_Y = Inches(0.1)
-TITLE_W = Inches(8)
-TITLE_H = Inches(0.4)
+TEMPLATE_DIR = (
+    BASE_DIR / "templates"
+)
 
-TITLE_FONT_SIZE = 20
+TEMPLATE_FILE = (
+    TEMPLATE_DIR /
+    "report_template.pptx"
+)
 
-# Model
+# =====================================
+# 출력
+# =====================================
 
-MODEL_X = Inches(0.3)
-MODEL_Y = Inches(0.6)
-MODEL_WIDTH = Inches(8)
+OUTPUT_DIR = (
+    BASE_DIR / "output"
+)
 
-# Legend
+OUTPUT_DIR.mkdir(
+    exist_ok=True
+)
 
-LEGEND_X = Inches(9.0)
-LEGEND_Y = Inches(0.6)
-LEGEND_WIDTH = Inches(2)
+OUTPUT_PPT = (
+    OUTPUT_DIR /
+    "output.pptx"
+)
 
-# Output
+# =====================================
+# 결과 슬라이드 태그
+# =====================================
 
-OUTPUT_PPT = "output.pptx"
+RESULT_TEMPLATE_TAG = (
+    "[TEMPLATE_RESULT]"
+)
+
+TITLE_TAG = (
+    "[CASE_TITLE]"
+)
+
+# =====================================
+# Rack
+# =====================================
+
+RACK_MODEL_TAG = (
+    "[RACK_MODEL]"
+)
+
+RACK_LEGEND_TAG = (
+    "[RACK_LEGEND]"
+)
+
+# =====================================
+# Glass
+# =====================================
+
+GLASS_MODEL_TAG = (
+    "[GLASS_MODEL]"
+)
+
+GLASS_LEGEND_TAG = (
+    "[GLASS_LEGEND]"
+)
+
+# =====================================
+# 범례 검출
+# =====================================
+
+LEGEND_SEARCH_RATIO = 0.35
+
+LEGEND_MARGIN_LEFT = 0.3
+
+LEGEND_MARGIN_RIGHT = 5.0
+
+LEGEND_MARGIN_TOP = 0.05
+
+LEGEND_MARGIN_BOTTOM = 0.05
+
+LEGEND_MAX_RIGHT_MARGIN = 180
+
+# =====================================
+# 모델 크롭
+# =====================================
+
+MODEL_MARGIN_LEFT = 1
+
+MODEL_MARGIN_RIGHT = 1
+
+MODEL_MARGIN_TOP = 1
+
+MODEL_MARGIN_BOTTOM = 1
+
+# =====================================
+# Debug
+# =====================================
+
+DEBUG = False
