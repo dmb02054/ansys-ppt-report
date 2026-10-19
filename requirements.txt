@@ -1,0 +1,5 @@
+opencv-python
+numpy
+python-pptx
+pillow
+openpyxl>=3.1

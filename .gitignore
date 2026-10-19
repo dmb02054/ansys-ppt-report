@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.pyc
+
+# VS Code
+.vscode/
+
+# Output
+output/
+labelled_images/
+output.pptx
+output_*.pptx
+~$output.pptx
+~$*.pptx
+~$*.xlsm
+templates/*.xlsm
+
+# Windows
+Thumbs.db
